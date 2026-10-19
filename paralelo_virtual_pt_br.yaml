@@ -1,0 +1,48 @@
+blueprint:
+  name: "Paralelo Virtual — Sincronizar Interruptores"
+  description: >
+    Mantém interruptores e/ou luzes sincronizados nos dois sentidos.
+    Se uma entidade mudar para ligado, envia ligar para todas; se mudar
+    para desligado, envia desligar para todas. Use entidades que representem
+    o estado real do relé/lâmpada, não botões que só publicam eventos.
+  domain: automation
+  input:
+    entidades:
+      name: Entidades do paralelo
+      description: Selecione todas as entidades que devem ficar sincronizadas.
+      selector:
+        entity:
+          multiple: true
+          domain:
+            - switch
+            - light
+
+triggers:
+  - trigger: state
+    entity_id: !input entidades
+    to: "on"
+  - trigger: state
+    entity_id: !input entidades
+    to: "off"
+
+conditions: []
+
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.to_state.state == 'on' }}"
+        sequence:
+          - action: homeassistant.turn_on
+            target:
+              entity_id: !input entidades
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.to_state.state == 'off' }}"
+        sequence:
+          - action: homeassistant.turn_off
+            target:
+              entity_id: !input entidades
+
+mode: restart
+max_exceeded: silent
